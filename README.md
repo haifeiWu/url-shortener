@@ -8,9 +8,11 @@ A simple and efficient URL shortening service written in Go. This project provid
 $ ./url-shortener
 ```
 
+and open browser http://localhost:8080/.
+
 ## Requirements
 
-* PostgreSQL
+* PostgreSQL (set `DATABASE_URL`)
 
 ## Installation
 
