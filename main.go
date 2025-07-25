@@ -99,22 +99,25 @@ func (app *App) shortenURLHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, Response{Error: "Failed to save URL"})
 	}
 
-	forwardedFor := c.Request().Header.Get("X-Forwarded-For")
-	if forwardedFor == "" {
-		proto := "http"
-		if c.Request().TLS != nil || c.Request().Header.Get("X-Forwarded-Proto") == "https" {
-			proto = "https"
-		}
+	serverURL := os.Getenv("SERVER_URL")
+	if serverURL != "" {
+		serverURL = c.Request().Header.Get("X-Forwarded-For")
+		if serverURL == "" {
+			proto := "http"
+			if c.Request().TLS != nil || c.Request().Header.Get("X-Forwarded-Proto") == "https" {
+				proto = "https"
+			}
 
-		host := c.Request().Host
-		if forwardedHost := c.Request().Header.Get("X-Forwarded-Host"); forwardedHost != "" {
-			host = forwardedHost
+			host := c.Request().Host
+			if forwardedHost := c.Request().Header.Get("X-Forwarded-Host"); forwardedHost != "" {
+				host = forwardedHost
+			}
+			path := c.Request().URL.String()
+			serverURL = fmt.Sprintf("%s://%s%s", proto, host, path)
 		}
-		path := c.Request().URL.String()
-		forwardedFor = fmt.Sprintf("%s://%s%s", proto, host, path)
 	}
-	log.Println("server", forwardedFor)
-	u, err := url.Parse(forwardedFor)
+	log.Println("server", serverURL)
+	u, err := url.Parse(serverURL)
 	if err != nil {
 		log.Println(err)
 		return c.JSON(http.StatusInternalServerError, Response{Error: "Failed to save URL"})
