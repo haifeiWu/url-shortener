@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"embed"
+	"errors"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -54,14 +55,6 @@ type Response struct {
 	Error    string `json:"error,omitempty"`
 }
 
-func initDB(db *bun.DB) error {
-	_, err := db.NewCreateTable().
-		Model((*ShortURL)(nil)).
-		IfNotExists().
-		Exec(context.Background())
-	return err
-}
-
 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 func generateShortID(length int) string {
@@ -88,10 +81,10 @@ func (app *App) shortenURLHandler(c echo.Context) error {
 		shortID = generateShortID(6)
 		var exists ShortURL
 		err := app.db.NewSelect().Model(&exists).Where("id = ?", shortID).Scan(ctx)
-		if err != nil && err != sql.ErrNoRows {
+		if err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return c.JSON(http.StatusInternalServerError, Response{Error: "Database error"})
 		}
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			break
 		}
 	}
@@ -131,7 +124,7 @@ func (app *App) redirectHandler(c echo.Context) error {
 
 	var url ShortURL
 	err := app.db.NewSelect().Model(&url).Where("id = ?", shortID).Scan(ctx)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return c.JSON(http.StatusNotFound, Response{Error: "Short URL not found"})
 	} else if err != nil {
 		return c.JSON(http.StatusInternalServerError, Response{Error: "Database error"})
