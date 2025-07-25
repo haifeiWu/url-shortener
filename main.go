@@ -3,8 +3,10 @@ package main
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"flag"
 	"fmt"
+	"io/fs"
 	"log"
 	"math/rand"
 	"net/http"
@@ -24,6 +26,9 @@ const name = "url-shortener"
 const version = "0.0.6"
 
 var revision = "HEAD"
+
+//go:embed assets
+var assets embed.FS
 
 type ShortURL struct {
 	bun.BaseModel `bun:"table:urls,alias:u"`
@@ -156,6 +161,10 @@ func main() {
 	e := echo.New()
 	e.POST("/shorten", app.shortenURLHandler)
 	e.GET("/:id", app.redirectHandler)
+
+	sub, _ := fs.Sub(assets, "assets")
+	e.GET("/", echo.WrapHandler(http.FileServer(http.FS(sub))))
+	e.GET("/static/*", echo.WrapHandler(http.FileServer(http.FS(sub))))
 
 	log.Println("Server starting on :8080")
 	if err := e.Start(":8080"); err != nil {
