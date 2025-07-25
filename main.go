@@ -112,6 +112,7 @@ func (app *App) shortenURLHandler(c echo.Context) error {
 		path := c.Request().URL.String()
 		forwardedFor = fmt.Sprintf("%s://%s%s", proto, host, path)
 	}
+	log.Println("server", forwardedFor)
 	u, err := url.Parse(forwardedFor)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, Response{Error: "Failed to save URL"})
