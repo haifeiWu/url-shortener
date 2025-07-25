@@ -106,7 +106,11 @@ func (app *App) shortenURLHandler(c echo.Context) error {
 
 	serverURL := os.Getenv("SERVER_URL")
 	if serverURL == "" {
-		serverURL = "http://localhost:8080/"
+		serverURL = "http://"
+		if c.Request().TLS != nil {
+			serverURL = "https://"
+		}
+		serverURL += c.Request().Host
 	}
 	log.Println("server", serverURL)
 	u, err := url.Parse(serverURL)
