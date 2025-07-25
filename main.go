@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"flag"
 	"fmt"
 	"log"
 	"math/rand"
@@ -17,6 +18,12 @@ import (
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
 )
+
+const name = "url-shortener"
+
+const version = "0.0.0"
+
+var revision = "HEAD"
 
 type ShortURL struct {
 	bun.BaseModel `bun:"table:urls,alias:u"`
@@ -129,6 +136,15 @@ func (app *App) redirectHandler(c echo.Context) error {
 }
 
 func main() {
+	var ver bool
+	flag.BoolVar(&ver, "version", false, "show version")
+	flag.Parse()
+
+	if ver {
+		fmt.Println(version)
+		os.Exit(0)
+	}
+
 	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
 	if err != nil {
 		log.Fatal(err)
