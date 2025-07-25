@@ -101,20 +101,7 @@ func (app *App) shortenURLHandler(c echo.Context) error {
 
 	serverURL := os.Getenv("SERVER_URL")
 	if serverURL == "" {
-		serverURL = c.Request().Header.Get("X-Forwarded-For")
-		if serverURL == "" {
-			proto := "http"
-			if c.Request().TLS != nil || c.Request().Header.Get("X-Forwarded-Proto") == "https" {
-				proto = "https"
-			}
-
-			host := c.Request().Host
-			if forwardedHost := c.Request().Header.Get("X-Forwarded-Host"); forwardedHost != "" {
-				host = forwardedHost
-			}
-			path := c.Request().URL.String()
-			serverURL = fmt.Sprintf("%s://%s%s", proto, host, path)
-		}
+		serverURL = "http://localhost:8080/"
 	}
 	log.Println("server", serverURL)
 	u, err := url.Parse(serverURL)
@@ -133,9 +120,9 @@ func (app *App) redirectHandler(c echo.Context) error {
 	var url ShortURL
 	err := app.db.NewSelect().Model(&url).Where("id = ?", shortID).Scan(ctx)
 	if err == sql.ErrNoRows {
-		return c.JSON(http.StatusNotFound, map[string]string{"error": "Short URL not found"})
+		return c.JSON(http.StatusNotFound, Response{Error: "Short URL not found"})
 	} else if err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Database error"})
+		return c.JSON(http.StatusInternalServerError, Response{Error: "Database error"})
 	}
 
 	return c.Redirect(http.StatusMovedPermanently, url.Original)
@@ -164,10 +151,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	e := echo.New()
-
 	app := &App{db: bundb}
 
+	e := echo.New()
 	e.POST("/shorten", app.shortenURLHandler)
 	e.GET("/:id", app.redirectHandler)
 
