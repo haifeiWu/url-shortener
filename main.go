@@ -95,6 +95,7 @@ func (app *App) shortenURLHandler(c echo.Context) error {
 	}
 	_, err := app.db.NewInsert().Model(shortURL).Exec(ctx)
 	if err != nil {
+		log.Println(err)
 		return c.JSON(http.StatusInternalServerError, Response{Error: "Failed to save URL"})
 	}
 
@@ -115,6 +116,7 @@ func (app *App) shortenURLHandler(c echo.Context) error {
 	log.Println("server", forwardedFor)
 	u, err := url.Parse(forwardedFor)
 	if err != nil {
+		log.Println(err)
 		return c.JSON(http.StatusInternalServerError, Response{Error: "Failed to save URL"})
 	}
 	u.Path = shortID
