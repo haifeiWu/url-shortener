@@ -19,6 +19,9 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/dialect/pgdialect"
+	"github.com/uptrace/bun/dialect/sqlitedialect"
+	"github.com/uptrace/bun/driver/sqliteshim"
+	"github.com/uptrace/bun/schema"
 )
 
 const name = "url-shortener"
@@ -147,12 +150,24 @@ func main() {
 		os.Exit(0)
 	}
 
-	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
+	dsn := os.Getenv("DATABASE_URL")
+	driver := sqliteshim.ShimName
+	var dialect schema.Dialect = sqlitedialect.New()
+	if dsn == "" {
+		dsn = "file:./url-shortener.sqlite"
+	}
+
+	if strings.HasPrefix(dsn, "postgres://") {
+		driver = "postgres"
+		dialect = pgdialect.New()
+	}
+
+	db, err := sql.Open(driver, dsn)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	bundb := bun.NewDB(db, pgdialect.New())
+	bundb := bun.NewDB(db, dialect)
 	defer bundb.Close()
 
 	_, err = bundb.NewCreateTable().Model((*ShortURL)(nil)).IfNotExists().Exec(context.Background())
