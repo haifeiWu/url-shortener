@@ -100,7 +100,7 @@ func (app *App) shortenURLHandler(c echo.Context) error {
 	}
 
 	serverURL := os.Getenv("SERVER_URL")
-	if serverURL != "" {
+	if serverURL == "" {
 		serverURL = c.Request().Header.Get("X-Forwarded-For")
 		if serverURL == "" {
 			proto := "http"
