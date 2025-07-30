@@ -8,3 +8,4 @@ url-shortener.exe
 backup
 test.json
 *.sqlite
+.idea

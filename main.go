@@ -55,6 +55,11 @@ type Response struct {
 	Error    string `json:"error,omitempty"`
 }
 
+type ListUrlResponse struct {
+	ShortURLs []ShortURL `json:"short_url,omitempty"`
+	Error     string     `json:"error,omitempty"`
+}
+
 const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
 func generateShortID(length int) string {
@@ -133,6 +138,15 @@ func (app *App) redirectHandler(c echo.Context) error {
 	return c.Redirect(http.StatusMovedPermanently, url.Original)
 }
 
+func (app *App) listShortUrlsHandler(c echo.Context) error {
+	var urls []ShortURL
+	err := app.db.NewSelect().Model(&urls).Scan(c.Request().Context())
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, Response{Error: "Database error"})
+	}
+	return c.JSON(http.StatusOK, ListUrlResponse{ShortURLs: urls})
+}
+
 func main() {
 	var ver bool
 	flag.BoolVar(&ver, "version", false, "show version")
@@ -173,6 +187,7 @@ func main() {
 	e := echo.New()
 	e.POST("/shorten", app.shortenURLHandler)
 	e.GET("/:id", app.redirectHandler)
+	e.GET("/listShortUrls", app.listShortUrlsHandler)
 
 	sub, _ := fs.Sub(assets, "assets")
 	e.GET("/", echo.WrapHandler(http.FileServer(http.FS(sub))))
